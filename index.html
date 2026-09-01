@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Evolution Scanner</title>
+<style>
+  :root {
+    --bg1: #1b3a1a;
+    --bg2: #0f2410;
+    --accent: #ffb703;
+    --accent2: #ff6b35;
+    --card: #142e14;
+    --text: #eafbe8;
+    --muted: #9fc39a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: radial-gradient(circle at top, var(--bg1), var(--bg2));
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card);
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 3px solid #2e5a2a;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: "🍌 🍌 🍌 🍌 🍌";
+    position: absolute;
+    top: -10px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 20px;
+    opacity: 0.15;
+    letter-spacing: 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    margin: 8px 0 2px;
+    text-shadow: 0 0 12px rgba(255,183,3,0.5);
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 22px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .photo-zone {
+    width: 100%;
+    aspect-ratio: 3/4;
+    border-radius: 16px;
+    border: 3px dashed #3f6a3a;
+    background: #0e1f0e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    transition: 0.2s;
+  }
+  .photo-zone:hover { border-color: var(--accent); }
+  .photo-zone img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .placeholder {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 20px;
+  }
+  .placeholder .emoji { font-size: 48px; display:block; margin-bottom: 8px; }
+  input[type=file] { display: none; }
+  .scan-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10, 25, 10, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .scan-overlay.active { display: flex; }
+  .scan-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: scan 1.6s linear infinite;
+  }
+  @keyframes scan {
+    0% { top: 0%; }
+    100% { top: 100%; }
+  }
+  .scan-text {
+    background: rgba(0,0,0,0.6);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    z-index: 2;
+  }
+  .status {
+    text-align: center;
+    margin-top: 18px;
+    font-weight: bold;
+    font-size: 18px;
+    color: var(--accent2);
+    min-height: 24px;
+  }
+  .bars { margin-top: 14px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .bar-label { width: 130px; color: var(--muted); }
+  .bar-track {
+    flex: 1;
+    height: 14px;
+    background: #0e1f0e;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #2e5a2a;
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 8px;
+    transition: width 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+  .fill-human { background: linear-gradient(90deg, #6bd06b, #2f8f2f); }
+  .fill-monkey { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .bar-value { width: 40px; text-align: right; font-weight: bold; }
+  .footer-note {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .reset-btn {
+    display: block;
+    margin: 18px auto 0;
+    background: transparent;
+    border: 1px solid #3f6a3a;
+    color: var(--muted);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🐒 Evolution Scanner</h1>
+  <div class="subtitle" id="subtitle">Upload a photo to begin</div>
+
+  <label class="photo-zone" id="photoZone">
+    <input type="file" id="photoInput" accept="image/*">
+    <div class="placeholder" id="placeholder">
+      <span class="emoji">📸</span>
+      Tap to upload your photo
+    </div>
+    <div class="scan-overlay" id="scanOverlay">
+      <div class="scan-line"></div>
+      <div class="scan-text" id="scanText">Analyzing DNA...</div>
+    </div>
+  </label>
+
+  <div class="status" id="statusText"></div>
+
+  <div class="bars">
+    <div class="bar-row">
+      <div class="bar-label">Humanity detected</div>
+      <div class="bar-track"><div class="bar-fill fill-human" id="humanBar"></div></div>
+      <div class="bar-value" id="humanVal">0%</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Monkey detected</div>
+      <div class="bar-track"><div class="bar-fill fill-monkey" id="monkeyBar"></div></div>
+      <div class="bar-value" id="monkeyVal">0%</div>
+    </div>
+  </div>
+
+  <div class="footer-note">Results are 100% scientific and not up for debate 🍌</div>
+  <button class="reset-btn" id="resetBtn">Reset scan</button>
+</div>
+
+<script>
+  const photoInput = document.getElementById('photoInput');
+  const photoZone = document.getElementById('photoZone');
+  const placeholder = document.getElementById('placeholder');
+  const scanOverlay = document.getElementById('scanOverlay');
+  const scanText = document.getElementById('scanText');
+  const subtitle = document.getElementById('subtitle');
+  const statusText = document.getElementById('statusText');
+  const humanBar = document.getElementById('humanBar');
+  const monkeyBar = document.getElementById('monkeyBar');
+  const humanVal = document.getElementById('humanVal');
+  const monkeyVal = document.getElementById('monkeyVal');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // Points to "hasim monkey.png" — must sit in the SAME FOLDER as this HTML file.
+  // Space in the filename is URL-encoded as %20.
+  const MONKEY_IMG = "hasim%20monkey.png";
+
+  const scanMessages = [
+    "Analyzing DNA...",
+    "Measuring banana affinity...",
+    "Cross-referencing primate database...",
+    "Detecting tree-climbing instincts...",
+    "Finalizing results..."
+  ];
+
+  function resetState() {
+    const img = photoZone.querySelector('img');
+    if (img) img.remove();
+    placeholder.style.display = 'block';
+    scanOverlay.classList.remove('active');
+    photoInput.value = '';
+    subtitle.textContent = 'Upload a photo to begin';
+    statusText.textContent = '';
+    humanBar.style.width = '0%';
+    monkeyBar.style.width = '0%';
+    humanVal.textContent = '0%';
+    monkeyVal.textContent = '0%';
+  }
+
+  function runScan(originalImgEl) {
+    subtitle.textContent = 'Scanning in progress...';
+    scanOverlay.classList.add('active');
+
+    let msgIndex = 0;
+    scanText.textContent = scanMessages[0];
+    const msgInterval = setInterval(() => {
+      msgIndex = (msgIndex + 1) % scanMessages.length;
+      scanText.textContent = scanMessages[msgIndex];
+    }, 700);
+
+    // Delay before revealing the monkey result (in ms)
+    setTimeout(() => {
+      clearInterval(msgInterval);
+      scanOverlay.classList.remove('active');
+      originalImgEl.src = MONKEY_IMG;
+      subtitle.textContent = 'Scan complete';
+      statusText.textContent = 'Evolution Status: Regressing';
+
+      setTimeout(() => {
+        humanBar.style.width = '12%';
+        monkeyBar.style.width = '88%';
+        humanVal.textContent = '12%';
+        monkeyVal.textContent = '88%';
+      }, 200);
+    }, 3200);
+  }
+
+  photoInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      placeholder.style.display = 'none';
+      let img = photoZone.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        photoZone.appendChild(img);
+      }
+      img.src = evt.target.result;
+      runScan(img);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  resetBtn.addEventListener('click', resetState);
+</script>
+
+</body>
+</html>
